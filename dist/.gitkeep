@@ -1,0 +1,4 @@
+// dist/.gitkeep
+// This folder is created by `npm run build` (esbuild output).
+// Run setup.bat (Windows) to build and generate icons, then load
+// this folder as an unpacked Chrome extension.

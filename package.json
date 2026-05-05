@@ -1,0 +1,12 @@
+{
+  "name": "video-enhancer",
+  "version": "1.0.0",
+  "description": "OLED-optimized real-time WebGL color grading Chrome extension",
+  "scripts": {
+    "build": "esbuild content/content.js --bundle --outfile=dist/content.bundle.js --format=iife --platform=browser",
+    "watch": "esbuild content/content.js --bundle --outfile=dist/content.bundle.js --format=iife --platform=browser --watch"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.0"
+  }
+}

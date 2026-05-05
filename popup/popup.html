@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Video Enhancer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 13px;
+      background: #141414;
+      color: #e0e0e0;
+      user-select: none;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 16px 11px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .logo { font-size: 14px; font-weight: 600; letter-spacing: 0.2px; }
+    .logo em { color: #7ecfff; font-style: normal; }
+
+    /* ── Toggle switch ───────────────────────────────────────────────────── */
+    .toggle-wrap { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #666; }
+    .toggle { position: relative; width: 38px; height: 20px; flex-shrink: 0; cursor: pointer; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: #3a3a3a; border-radius: 10px;
+      transition: background 0.2s;
+    }
+    .toggle-thumb {
+      position: absolute;
+      width: 14px; height: 14px;
+      background: #fff; border-radius: 50%;
+      top: 3px; left: 3px;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+    .toggle input:checked ~ .toggle-track { background: #4CAF50; }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(18px); }
+
+    /* ── Profile info ────────────────────────────────────────────────────── */
+    #profile-bar {
+      padding: 9px 16px 8px;
+      background: #1c1c1c;
+      border-bottom: 1px solid #2a2a2a;
+      font-size: 11px;
+    }
+    #content-title {
+      color: #bbb;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 288px;
+    }
+    .meta-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 7px; border-radius: 9px;
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.6px;
+    }
+    .badge-anime    { background: #1a2a4a; color: #7ecfff; }
+    .badge-live     { background: #1a3a1a; color: #7eff9a; }
+    .badge-dark     { background: #3a2a1a; color: #ffcc7e; }
+    .badge-unknown  { background: #2a2a2a; color: #666; }
+    #sample-count { font-size: 10px; color: #555; }
+
+    /* ── Sliders ─────────────────────────────────────────────────────────── */
+    #sliders { padding: 10px 16px 4px; }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .row-label {
+      flex: 0 0 96px;
+      font-size: 11px;
+      color: #999;
+      white-space: nowrap;
+    }
+    .row-label.override { color: #ffcc7e; }
+    .row-label.override::after { content: ' •'; }
+
+    .row input[type=range] {
+      flex: 1;
+      height: 3px;
+      accent-color: #7ecfff;
+      cursor: pointer;
+      background: transparent;
+    }
+    .row-val {
+      flex: 0 0 36px;
+      text-align: right;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      color: #7ecfff;
+    }
+
+    /* ── Footer buttons ──────────────────────────────────────────────────── */
+    footer {
+      display: flex;
+      gap: 8px;
+      padding: 8px 16px 13px;
+      border-top: 1px solid #2a2a2a;
+      margin-top: 4px;
+    }
+    button {
+      flex: 1;
+      padding: 6px 0;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background: #1e1e1e;
+      color: #aaa;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    button:hover { background: #282828; color: #ddd; }
+    button.danger { border-color: #5a2020; color: #e07070; }
+    button.danger:hover { background: #2a1a1a; color: #f08080; }
+
+    /* ── No-video state ──────────────────────────────────────────────────── */
+    #no-video {
+      padding: 28px 16px;
+      text-align: center;
+      color: #555;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    #no-video strong { display: block; color: #888; margin-bottom: 6px; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Video <em>Enhancer</em></div>
+    <div class="toggle-wrap">
+      <span id="toggle-label">ON</span>
+      <label class="toggle" title="Enable / disable color grading">
+        <input type="checkbox" id="toggle" checked>
+        <span class="toggle-track"></span>
+        <span class="toggle-thumb"></span>
+      </label>
+    </div>
+  </header>
+
+  <div id="no-video">
+    <strong>No video detected</strong>
+    Open a video on a supported streaming site to begin.
+  </div>
+
+  <div id="main" style="display:none">
+    <div id="profile-bar">
+      <div id="content-title">Loading...</div>
+      <div class="meta-row">
+        <span id="type-badge" class="badge badge-unknown">Analyzing</span>
+        <span id="sample-count"></span>
+      </div>
+    </div>
+
+    <div id="sliders"></div>
+
+    <footer>
+      <button id="btn-reset">Reset Adjustments</button>
+      <button id="btn-delete" class="danger">Delete Profile</button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

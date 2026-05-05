@@ -1,0 +1,77 @@
+{
+  "manifest_version": 3,
+  "name": "Video Enhancer — OLED Color Grading",
+  "version": "1.0.0",
+  "description": "Real-time WebGL color grading for Netflix, Crunchyroll, and other streaming sites. OLED-optimized with intelligent auto-tuning.",
+
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+
+  "host_permissions": [
+    "https://www.netflix.com/*",
+    "https://www.crunchyroll.com/*",
+    "https://*.crunchyroll.com/*",
+    "https://www.youtube.com/*",
+    "https://*.youtube.com/*",
+    "https://www.disneyplus.com/*",
+    "https://www.primevideo.com/*",
+    "https://*.hulu.com/*"
+  ],
+
+  "background": {
+    "service_worker": "background/service_worker.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.netflix.com/*",
+        "https://www.crunchyroll.com/*",
+        "https://*.crunchyroll.com/*",
+        "https://www.youtube.com/*",
+        "https://www.disneyplus.com/*",
+        "https://www.primevideo.com/*",
+        "https://*.hulu.com/*"
+      ],
+      "js": ["dist/content.bundle.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "Video Enhancer"
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "webgl/shaders/fragment.glsl",
+        "webgl/shaders/vertex.glsl"
+      ],
+      "matches": [
+        "https://www.netflix.com/*",
+        "https://www.crunchyroll.com/*",
+        "https://*.crunchyroll.com/*",
+        "https://www.youtube.com/*",
+        "https://www.disneyplus.com/*",
+        "https://www.primevideo.com/*",
+        "https://*.hulu.com/*"
+      ]
+    }
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
