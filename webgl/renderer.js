@@ -27,19 +27,27 @@ export class WebGLRenderer {
   async init(video) {
     this.video = video;
 
-    this.engine = new WebGLEngine();
+    this.engine = new WebGLEngine(() => this._triggerFallback());
     const webglSuccess = await this.engine.init(video);
 
     if (!webglSuccess) {
-      console.log('WebGL blocked by DRM/CORS. Falling back to SVG filters.');
-      this.engine = new SVGEngine();
-      await this.engine.init(video);
+      await this._triggerFallback();
     } else {
       console.log('WebGL Spatial Upscaling Engine initialised.');
+      this.updateParams(this.params);
     }
 
-    this.updateParams(this.params);
     return true;
+  }
+
+  async _triggerFallback() {
+    console.log('WebGL blocked by DRM/CORS. Falling back to SVG filters.');
+    if (this.engine) {
+      this.engine.destroy();
+    }
+    this.engine = new SVGEngine();
+    await this.engine.init(this.video);
+    this.updateParams(this.params);
   }
 
   updateParams(newParams) {

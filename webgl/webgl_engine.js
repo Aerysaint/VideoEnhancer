@@ -1,7 +1,8 @@
 // webgl/webgl_engine.js
 
 export class WebGLEngine {
-  constructor() {
+  constructor(onFallback) {
+    this.onFallback = onFallback;
     this.video = null;
     this.canvas = null;
     this.gl = null;
@@ -16,6 +17,12 @@ export class WebGLEngine {
 
   async init(video) {
     this.video = video;
+
+    // Check for EME / DRM explicitly before even trying WebGL.
+    if (this.video.mediaKeys) {
+        console.log('DRM detected via mediaKeys - aborting WebGL, switching to fallback.');
+        return false;
+    }
 
     // Create the canvas
     this.canvas = document.createElement('canvas');
@@ -263,6 +270,13 @@ export class WebGLEngine {
     if (!this.video || !this.gl) return;
     const gl = this.gl;
 
+    if (this.video.mediaKeys) {
+        console.log('DRM mediaKeys attached mid-stream. Triggering fallback.');
+        if (this.onFallback) this.onFallback();
+        this.destroy();
+        return;
+    }
+
     if (this.video.readyState >= 2 && !this.video.paused && !this.video.ended) {
         try {
             gl.bindTexture(gl.TEXTURE_2D, this.texture);
@@ -270,6 +284,9 @@ export class WebGLEngine {
         } catch(e) {
             // DRM might have kicked in later, or cross-origin change
             console.error('Texture upload failed mid-stream.', e);
+            if (this.onFallback) this.onFallback();
+            this.destroy();
+            return;
         }
     }
 

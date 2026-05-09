@@ -538,7 +538,8 @@
 
   // webgl/webgl_engine.js
   var WebGLEngine = class {
-    constructor() {
+    constructor(onFallback) {
+      this.onFallback = onFallback;
       this.video = null;
       this.canvas = null;
       this.gl = null;
@@ -550,6 +551,10 @@
     }
     async init(video) {
       this.video = video;
+      if (this.video.mediaKeys) {
+        console.log("DRM detected via mediaKeys - aborting WebGL, switching to fallback.");
+        return false;
+      }
       this.canvas = document.createElement("canvas");
       this.canvas.dataset.enhancerCanvas = "true";
       this.canvas.style.position = "absolute";
@@ -769,12 +774,23 @@
       if (!this.video || !this.gl)
         return;
       const gl = this.gl;
+      if (this.video.mediaKeys) {
+        console.log("DRM mediaKeys attached mid-stream. Triggering fallback.");
+        if (this.onFallback)
+          this.onFallback();
+        this.destroy();
+        return;
+      }
       if (this.video.readyState >= 2 && !this.video.paused && !this.video.ended) {
         try {
           gl.bindTexture(gl.TEXTURE_2D, this.texture);
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.video);
         } catch (e) {
           console.error("Texture upload failed mid-stream.", e);
+          if (this.onFallback)
+            this.onFallback();
+          this.destroy();
+          return;
         }
       }
       gl.useProgram(this.program);
@@ -959,17 +975,24 @@
     }
     async init(video) {
       this.video = video;
-      this.engine = new WebGLEngine();
+      this.engine = new WebGLEngine(() => this._triggerFallback());
       const webglSuccess = await this.engine.init(video);
       if (!webglSuccess) {
-        console.log("WebGL blocked by DRM/CORS. Falling back to SVG filters.");
-        this.engine = new SVGEngine();
-        await this.engine.init(video);
+        await this._triggerFallback();
       } else {
         console.log("WebGL Spatial Upscaling Engine initialised.");
+        this.updateParams(this.params);
       }
-      this.updateParams(this.params);
       return true;
+    }
+    async _triggerFallback() {
+      console.log("WebGL blocked by DRM/CORS. Falling back to SVG filters.");
+      if (this.engine) {
+        this.engine.destroy();
+      }
+      this.engine = new SVGEngine();
+      await this.engine.init(this.video);
+      this.updateParams(this.params);
     }
     updateParams(newParams) {
       this.params = { ...this.params, ...newParams };
